@@ -85,7 +85,7 @@ def _asgi_client(
     accept: str = "application/json, text/event-stream",
 ) -> httpx2.AsyncClient:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
-        async with server.lifespan(server) as lifespan_state:
+        async with server.lifespan() as lifespan_state:
             await handle_modern_request(server, security_settings, json_response, lifespan_state, scope, receive, send)
 
     return httpx2.AsyncClient(
@@ -692,7 +692,7 @@ async def test_disconnect_cancels_handler_and_runs_exit_stack() -> None:
         pass
 
     with anyio.fail_after(5):
-        async with server.lifespan(server) as lifespan_state:
+        async with server.lifespan() as lifespan_state:
             await handle_modern_request(server, None, False, lifespan_state, scope, receive, send)
         await cleanup_ran.wait()
 
@@ -791,7 +791,7 @@ async def test_modern_tools_call_rejects_missing_mcp_param_header_for_present_ar
 
 
 async def test_modern_tools_call_rejects_orphan_mcp_param_header() -> None:
-    """SDK posture: a header for an absent argument is the routing-spoof case the gate exists to stop."""
+    """SDK stance: a header for an absent argument is the routing-spoof case the gate exists to stop."""
     async with _asgi_client(_x_mcp_server()) as http:
         response = await http.post(
             "/mcp", json=_tool_call_body({}), headers=_TOOL_CALL_HEADERS | {"mcp-param-region": "eu"}

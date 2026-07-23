@@ -9,9 +9,10 @@ The SDK routes every request by its `MCP-Protocol-Version` header. A request nam
 So a legacy client is not something you build *for*. It is something that connects *to* the server you already wrote. You configure nothing.
 
 !!! note
-    Nothing, literally. There is no `legacy=` option, no version allowlist, no way to reject or
-    disable an era: not on `streamable_http_app()`, not on `run()`, not on the session manager.
-    Both eras are always on. The nearest thing to a per-era switch in that signature is
+    Nothing on the transport, and nothing on the server either. There is no `legacy=` option
+    and no version allowlist on `MCPServer`, `Server`, `streamable_http_app()`, `run()`, or the
+    session manager; both eras are always on, and the version header routes each request to
+    the right one. The nearest thing to a per-request switch in the HTTP signature is
     `stateless_http`, and it is most of this page.
 
 ## One handler, both eras
@@ -112,7 +113,7 @@ Two lines, no `if`, no version check, and you are done. That is the entire list 
 
 ## Recap
 
-* One `streamable_http_app()` serves both protocol eras. The SDK routes each request by its `MCP-Protocol-Version` header; there is nothing to configure and no era knob to look for.
+* One `streamable_http_app()` (and one stdio server) serves both protocol eras, always. The SDK routes each request by its `MCP-Protocol-Version` header, and a stream connection's era is decided by the client's opening message; there is nothing to configure on the transport or the server and no era switch to look for.
 * A legacy client costs you a session: an in-process `Mcp-Session-Id` record with no distributed store behind it. More than one worker means **sticky routing**, or the wrong worker answers `404 Session not found`. **[Deploy & scale](deploy.md)** has the multi-worker story.
 * `stateless_http=True` is the one knob, and it is **legacy-leg-only**. It buys free load balancing for legacy clients at the price of both server-to-client channels on that leg: server-initiated requests raise `NoBackChannelError` (a top-level error at the client, not an `is_error` result), and notifications are dropped.
 * A `2026-07-28` connection is sessionless either way. `stateless_http` never touches it.
